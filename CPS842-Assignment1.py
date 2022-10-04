@@ -3,7 +3,6 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 corpus_df = pd.read_json("20Lines2.json", encoding="utf-16", lines=True)
-print(corpus_df)
 dictionary = {}
 postings = {}
 for i in range (0, len(corpus_df)-1):
