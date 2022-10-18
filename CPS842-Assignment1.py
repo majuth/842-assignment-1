@@ -3,7 +3,12 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 corpus_df = pd.read_json("20Lines2.json", encoding="utf-16", lines=True)
-stopwords_df = pd.read_table('stopwords.txt', names=["stopwords"])
+# stopwords_df = pd.read_table('stopwords.txt', names=["stopwords"])
+
+with open('stopwords.txt', 'r') as stopwordsFile:
+    stopwords = stopwordsFile.readlines()
+    list = stopwords.split('\n')
+
 dictionary = {}
 postings = {}
 for doc in range (0, len(corpus_df)):
@@ -17,10 +22,14 @@ for doc in range (0, len(corpus_df)):
         answer = ''.join(filter(acceptable_characters.__contains__, term))
         filtered_terms.append(answer)
 
-# convert nonetype to list -> drop '' none
+    # print(stopwords_df)
+    # for term in filtered_terms:
+    #     if stopwords_df["stopwords"].str.contains(term).any():
+    #         filtered_terms.remove(term)
+    print(list)
     for term in filtered_terms:
-        if stopwords_df["stopwords"].str.contains(term).all():
-            filtered_terms=filtered_terms.remove(term)
+        if term in list:
+            filtered_terms.remove(term)
 
 # create dictionary
     for term in filtered_terms:
