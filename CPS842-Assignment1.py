@@ -1,19 +1,27 @@
-from turtle import title
 import pandas as pd 
 from bs4 import BeautifulSoup
+from porterStemming import PorterStemmer
+import argparse
 
 corpus_df = pd.read_json("20Lines2.json", encoding="utf-16", lines=True)
-# stopwords_df = pd.read_table('stopwords.txt', names=["stopwords"])
 
-with open('stopwords.txt', 'r') as stopwordsFile:
-    stopwords = stopwordsFile.readlines()
-    list = stopwords.split('\n')
+stopwords=[]
+with open('stopwords.txt', 'r') as f:
+    for word in f:
+        word = word.split('\n')
+        stopwords.append(word[0])
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-stopword', action='store_true')
+parser.add_argument('-stem', action='store_true')
+options = parser.parse_args()
 
 dictionary = {}
 postings = {}
 for doc in range (0, len(corpus_df)):
     titleAndContent = corpus_df.title[doc] .join(' ').join(BeautifulSoup(corpus_df.contents[doc], "html.parser").stripped_strings)
     terms = titleAndContent.lower().split()
+
 
 # remove punctuation and symbols
     filtered_terms = []
@@ -22,14 +30,19 @@ for doc in range (0, len(corpus_df)):
         answer = ''.join(filter(acceptable_characters.__contains__, term))
         filtered_terms.append(answer)
 
-    # print(stopwords_df)
-    # for term in filtered_terms:
-    #     if stopwords_df["stopwords"].str.contains(term).any():
-    #         filtered_terms.remove(term)
-    print(list)
-    for term in filtered_terms:
-        if term in list:
-            filtered_terms.remove(term)
+# porter stemming
+    if options.stem:
+        stemmed_terms=[]
+        for term in filtered_terms:
+            p=PorterStemmer()
+            stemmed_term = []
+            stemmed_term = (p.stem(term, 0, len(term)-1))
+            stemmed_terms.append("".join(stemmed_term))
+        filtered_terms=stemmed_terms
+
+# stopword removal
+    if options.stopword:
+        filtered_terms = [term for term in filtered_terms if term not in stopwords]
 
 # create dictionary
     for term in filtered_terms:
