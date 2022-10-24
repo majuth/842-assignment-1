@@ -4,3 +4,4 @@ trec_corpus_20220301_plain.json.gz
 desktop.ini
 dictionary.txt
 postings.txt
+__pycache__
