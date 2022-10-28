@@ -7,21 +7,21 @@ corpus_df = pd.read_json("20Lines2.json", encoding="utf-16", lines=True)
 
 stopwords=[]
 with open('stopwords.txt', 'r') as f:
-    for word in f:
-        word = word.split('\n')
-        stopwords.append(word[0])
+    for term in f:
+        term = term.split('\n')
+        stopwords.append(term[0])
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-stopword', action='store_true')
 parser.add_argument('-stem', action='store_true')
 options = parser.parse_args()
 
+# convert html text to list of words
 dictionary = {}
 postings = {}
 for doc in range (0, len(corpus_df)):
     titleAndContent = corpus_df.title[doc] .join(' ').join(BeautifulSoup(corpus_df.contents[doc], "html.parser").stripped_strings)
     terms = titleAndContent.lower().split()
-
 
 # remove punctuation and symbols
     filtered_terms = []
@@ -30,7 +30,7 @@ for doc in range (0, len(corpus_df)):
         answer = ''.join(filter(acceptable_characters.__contains__, term))
         filtered_terms.append(answer)
 
-# porter stemming
+# optional porter stemming
     if options.stem:
         stemmed_terms=[]
         for term in filtered_terms:
@@ -40,9 +40,10 @@ for doc in range (0, len(corpus_df)):
             stemmed_terms.append("".join(stemmed_term))
         filtered_terms=stemmed_terms
 
-# stopword removal
+# optional stopword removal
     if options.stopword:
-        filtered_terms = [term for term in filtered_terms if term not in stopwords]
+        stopwords_removed = [term for term in filtered_terms if term not in stopwords]
+        filtered_terms = stopwords_removed
 
 # create dictionary
     for term in filtered_terms:

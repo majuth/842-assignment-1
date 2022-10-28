@@ -2,11 +2,15 @@ from os import times
 import sys
 from porterStemming import PorterStemmer
 import time
+import pandas as pd
+from bs4 import BeautifulSoup
 
 dictionary = {}
 postings = []
 
 timings = []
+
+corpus_df = pd.read_json("20Lines2.json", encoding="utf-16", lines=True)
 
 with open(sys.argv[1], 'r') as dictionaryFile:
     dictionaryLines = dictionaryFile.readlines()
@@ -40,11 +44,30 @@ while queryTerm != "ZZEND":
         postingList = (postings[int(dictionary[queryTerm].split(" ,")[1])]).split(";")[:-1]
 
         for document in postingList:
-            print("Document ID: " + document.strip().split(",")[0][1:])
-            print("Document Title: ")
+            docID =  document.strip().split(",")[0][1:]
+            print("Document ID: " + docID)
+            title = (corpus_df.loc[corpus_df['id'] == int(docID)])["title"].item()
+            print("Document Title: " + title)
             print("Term Frequency: " + document.split(",")[1][1:])
             print("Positions: " + document.split("[")[1].split("]")[0])
-            print("Document Summary: ")
+            
+            index=corpus_df[corpus_df['id']==int(docID)].index.item()
+            contents = ' '.join(BeautifulSoup(corpus_df.contents[index], "html.parser").stripped_strings)
+            contents_list=contents.split()
+            pos=document.split("[")[1].split("]")[0]
+            first_occurence=(pos.split(","))[0]
+            if (int(first_occurence) < 5):
+                start = 0
+                end = int(first_occurence)+10
+            elif (int(first_occurence)+6 > len(contents_list)):
+                start=int(first_occurence)-5
+                end = len(first_occurence)
+            else:
+                start=int(first_occurence)-5
+                end = int(first_occurence)+6
+            summary=output=' '.join(contents_list[start:end])
+            
+            print("Document Summary: " + summary)
             end = time.time()
             timings.append((end-start))
             print("Search time: " + str(end - start))
