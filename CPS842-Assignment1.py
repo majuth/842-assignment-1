@@ -2,8 +2,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from porterStemming import PorterStemmer
 import argparse
-
-# corpus_df = pd.read_json("trec_corpus_5000.jsonl", encoding="utf-16", lines=True)
+import json
 
 stopwords=[]
 with open('stopwords.txt', 'r') as f:
@@ -19,10 +18,14 @@ options = parser.parse_args()
 # convert html text to list of words
 dictionary = {}
 postings = {}
-
-for corpus_df in pd.read_json("trec_corpus_5000.jsonl", encoding="utf-16", lines=True, chunksize=10):
-    for doc in range (0, len(corpus_df)):
-        titleAndContent = corpus_df.title[doc] .join(' ').join(BeautifulSoup(corpus_df.contents[doc], "html.parser").stripped_strings)
+counter = 0
+with open ("./corpus.jsonl", encoding="utf-8", errors="ignore") as corpusFile:
+    print("File opened")
+    for line in corpusFile:
+        # print(line)
+        document = json.loads(line)
+        titleAndContent = document['title'].join(' ').join(BeautifulSoup(document['contents'], "html.parser").stripped_strings)
+        del line
         terms = titleAndContent.lower().split()
 
     # remove punctuation and symbols
@@ -58,27 +61,30 @@ for corpus_df in pd.read_json("trec_corpus_5000.jsonl", encoding="utf-16", lines
         for i in range(len(filtered_terms)):
             term = filtered_terms[i]
             if term in postings:
-                if doc in postings[term]:
-                    tf = postings[term][doc]["term frequency"]
+                if document['id'] in postings[term]:
+                    tf = postings[term][document['id']]["term frequency"]
                     tf += 1
-                    positions = postings[term][doc]["positions"]
+                    positions = postings[term][document['id']]["positions"]
                     positions.append(i)
-                    postings[term][doc].update({
+                    postings[term][document['id']].update({
                         "term frequency" : tf,
                         "positions" : positions
                     })
                 else:
-                    postings[term][doc] = {
+                    postings[term][document['id']] = {
                         "term frequency" : 1,
                         "positions" : [i]
                     }
             else:
                 postings[term] = {
-                    doc : {
+                    document['id'] : {
                         "term frequency": 1,
                         "positions" : [i]
                     }
                 }
+        if (counter % 100 == 0):
+            print(str(counter) + " Documents processed") 
+        counter = counter + 1
 
 # write dictionary file
 with open('dictionary.txt', 'w') as dicFile:
@@ -89,5 +95,7 @@ with open('dictionary.txt', 'w') as dicFile:
 with open('postings.txt', 'w') as postFile:
     for term, doc in sorted(postings.items()):
         for docPosition, text in doc.items():
-            postFile.write("(" + str(corpus_df.id[docPosition]) + ", " + str(text["term frequency"]) + ", " + str(text["positions"]) + "); " )
+            postFile.write("(" + str(docPosition) + ", " + str(text["term frequency"]) + ", " + str(text["positions"]) + "); " )
         postFile.write("\n")
+
+print('index construction completed')
